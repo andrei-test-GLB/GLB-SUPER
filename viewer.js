@@ -178,7 +178,7 @@ function loadGLTF(url) {
 
 async function loadModel(file) {
   if (!file || !isGltfFile(file)) {
-    alert('Только .glb / .gltf');
+    alert('Only .glb / .gltf files are supported');
     return;
   }
   clearModel();
@@ -228,7 +228,7 @@ async function loadModel(file) {
     applyDisplayMode();
   } catch (err) {
     console.error(err);
-    alert('Ошибка загрузки модели: ' + (err?.message || err));
+    alert('Error loading model: ' + (err?.message || err));
     URL.revokeObjectURL(url);
   } finally {
     showLoading(false);
@@ -261,7 +261,7 @@ function clearModel() {
   originalMaterials.clear();
 
   hideModelInfo();
-  modelHier.innerHTML = '<p class="empty-state">Модель не загружена</p>';
+  modelHier.innerHTML = '<p class="empty-state">No model loaded</p>';
   modelCount.textContent = '0';
   rebuildMixer();
 }
@@ -270,7 +270,7 @@ function clearModel() {
 
 async function loadAnimation(file) {
   if (!file || !isGltfFile(file)) {
-    alert('Только .glb / .gltf');
+    alert('Only .glb / .gltf files are supported');
     return;
   }
   clearAnimationOnly();
@@ -280,7 +280,7 @@ async function loadAnimation(file) {
   try {
     const gltf = await loadGLTF(url);
     if (!gltf.animations || gltf.animations.length === 0) {
-      alert('В файле нет анимаций');
+      alert('No animations found in file');
       URL.revokeObjectURL(url);
       showLoading(false);
       return;
@@ -300,7 +300,7 @@ async function loadAnimation(file) {
     rebuildMixer();
   } catch (err) {
     console.error(err);
-    alert('Ошибка загрузки анимации: ' + (err?.message || err));
+    alert('Error loading animation: ' + (err?.message || err));
     URL.revokeObjectURL(url);
   } finally {
     showLoading(false);
@@ -312,7 +312,7 @@ function clearAnimationOnly() {
   URL.revokeObjectURL(animData.url);
   animData = null;
   hideAnimInfo();
-  animHier.innerHTML = '<p class="empty-state">Анимация не загружена</p>';
+  animHier.innerHTML = '<p class="empty-state">No animation loaded</p>';
   animCount.textContent = '0';
   rebuildMixer();
 }
@@ -398,7 +398,7 @@ function renderAnimList() {
   if (actions.length === 0) {
     const note = document.createElement('p');
     note.className = 'anim-note';
-    note.textContent = 'Загрузите анимацию';
+    note.textContent = 'Load an animation';
     animList.appendChild(note);
     return;
   }
@@ -410,7 +410,7 @@ function renderAnimList() {
       <span class="anim-src">${a.source === 'model' ? 'M' : 'A'}</span>
       <span class="anim-name">${a.name}</span>
     `;
-    btn.title = a.source === 'model' ? 'Из файла модели' : 'Из файла анимации';
+    btn.title = a.source === 'model' ? 'From model file' : 'From animation file';
     btn.addEventListener('click', () => playAnim(i));
     animList.appendChild(btn);
   });
