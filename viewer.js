@@ -90,7 +90,7 @@ scene.add(sun);
 // ─── State ───────────────────────────────────────────────────────
 
 let modelData = null;  // { url, name, size, root, clips }
-let animData = null;   // { url, name, size, scene, clips }
+let animDataList = []; // [{ url, name, size, scene, clips }, ...]
 
 let mixer = null;
 let actions = [];      // { source, name, clip, action }
@@ -273,7 +273,6 @@ async function loadAnimation(file) {
     alert('Only .glb / .gltf files are supported');
     return;
   }
-  clearAnimationOnly();
   showLoading(true);
   const url = URL.createObjectURL(file);
 
@@ -282,19 +281,13 @@ async function loadAnimation(file) {
     if (!gltf.animations || gltf.animations.length === 0) {
       alert('No animations found in file');
       URL.revokeObjectURL(url);
-      showLoading(false);
       return;
     }
 
-    animData = {
-      url,
-      name: file.name,
-      size: file.size,
-      scene: gltf.scene,
-      clips: gltf.animations,
-    };
+    const entry = { url, name: file.name, size: file.size, scene: gltf.scene, clips: gltf.animations };
+    animDataList.push(entry);
 
-    showAnimInfo();
+    showAnimInfo(entry);
     buildHierarchy(animHier, gltf.scene);
     updateAnimCount();
     rebuildMixer();
@@ -308,9 +301,9 @@ async function loadAnimation(file) {
 }
 
 function clearAnimationOnly() {
-  if (!animData) return;
-  URL.revokeObjectURL(animData.url);
-  animData = null;
+  if (animDataList.length === 0) return;
+  animDataList.forEach(d => URL.revokeObjectURL(d.url));
+  animDataList = [];
   hideAnimInfo();
   animHier.innerHTML = '<p class="empty-state">No animation loaded</p>';
   animCount.textContent = '0';
@@ -342,9 +335,7 @@ function rebuildMixer() {
   if (modelData.clips.length) {
     modelData.clips.forEach((clip) => all.push({ source: 'model', clip }));
   }
-  if (animData?.clips.length) {
-    animData.clips.forEach((clip) => all.push({ source: 'anim', clip }));
-  }
+  animDataList.forEach(d => d.clips.forEach(clip => all.push({ source: 'anim', clip })));
 
   actions = all.map((entry, i) => ({
     source: entry.source,
@@ -611,42 +602,44 @@ function updateModelCount() {
 }
 
 function updateAnimCount() {
-  animCount.textContent = animData ? animData.clips.length : 0;
+  animCount.textContent = animDataList.reduce((n, d) => n + d.clips.length, 0);
 }
 
 // ─── Sidebar info show/hide ──────────────────────────────────────
 
 function showModelInfo() {
-  modelDrop.classList.add('hidden');
+  modelDrop.classList.add('loaded');
+  modelDrop.querySelector('p').textContent = 'Drop to replace model';
   modelHier.classList.remove('hidden');
   modelInfo.classList.remove('hidden');
   modelClear.classList.remove('hidden');
   modelFname.textContent = modelData.name;
   modelFsize.textContent = formatBytes(modelData.size);
-  // Hide stage centered drop zone
   dropZone.classList.add('hidden');
 }
 
 function hideModelInfo() {
-  modelDrop.classList.remove('hidden');
+  modelDrop.classList.remove('loaded');
+  modelDrop.querySelector('p').textContent = 'Drop GLB model';
   modelHier.classList.add('hidden');
   modelInfo.classList.add('hidden');
   modelClear.classList.add('hidden');
-  // Show stage centered drop again
   dropZone.classList.remove('hidden');
 }
 
-function showAnimInfo() {
-  animDrop.classList.add('hidden');
+function showAnimInfo(entry) {
+  animDrop.classList.add('loaded');
+  animDrop.querySelector('p').textContent = 'Drop to add animation';
   animHier.classList.remove('hidden');
   animInfo.classList.remove('hidden');
   animClear.classList.remove('hidden');
-  animFname.textContent = animData.name;
-  animFsize.textContent = formatBytes(animData.size);
+  animFname.textContent = entry.name;
+  animFsize.textContent = formatBytes(entry.size);
 }
 
 function hideAnimInfo() {
-  animDrop.classList.remove('hidden');
+  animDrop.classList.remove('loaded');
+  animDrop.querySelector('p').textContent = 'Drop GLB with animation';
   animHier.classList.add('hidden');
   animInfo.classList.add('hidden');
   animClear.classList.add('hidden');
@@ -691,3 +684,18 @@ animClear.addEventListener('click', (e) => {
   e.stopPropagation();
   clearAnimationOnly();
 });
+
+// ─── Default file load ───────────────────────────────────────────
+
+async function loadDefaultFiles() {
+  try {
+    const [mResp, aResp] = await Promise.all([fetch('BaseMesh.glb'), fetch('animation_idle.glb')]);
+    if (!mResp.ok || !aResp.ok) return;
+    const [mBlob, aBlob] = await Promise.all([mResp.blob(), aResp.blob()]);
+    await loadModel(new File([mBlob], 'BaseMesh.glb', { type: 'model/gltf-binary' }));
+    await loadAnimation(new File([aBlob], 'animation_idle.glb', { type: 'model/gltf-binary' }));
+  } catch (e) {
+    console.warn('Default files not available:', e.message);
+  }
+}
+loadDefaultFiles();

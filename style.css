@@ -416,6 +416,22 @@ body {
 .t-Bone { color: #fbbf24; }
 .t-Group, .t-Object3D, .t-Scene { color: var(--accent); }
 
+/* Compact drop zone after file load */
+.side-drop.loaded {
+  flex: 0 0 auto;
+  margin: 8px;
+  padding: 7px 12px;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  border-width: 1px;
+}
+.side-drop.loaded svg { width: 15px; height: 15px; margin: 0; flex-shrink: 0; }
+.side-drop.loaded p { font-size: 11px; font-weight: 500; margin: 0; color: var(--muted); }
+.side-drop.loaded span { display: none; }
+
 /* Utility */
 .hidden { display: none !important; }
 
